@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taller Interactivo: Reciclaje Correcto</title>
+    <style>
+        :root {
+            --azul: #0055b8; --amarillo: #fcd116; --verde: #00843d;
+            --gris: #9fa1a4; --cafe: #6d4c41; --rojo: #ed1c24; 
+            --gris-oscuro: #3d3d3d; --beige: #d2b48c;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; text-align: center; }
+        
+        h1 { color: #003366; border-bottom: 4px solid #ed1c24; display: inline-block; padding-bottom: 10px; margin-bottom: 10px; }
+
+        .controles { margin-bottom: 20px; }
+        
+        .btn-reiniciar {
+            background-color: #ed1c24; color: white; border: none; padding: 12px 25px;
+            font-size: 1em; font-weight: bold; border-radius: 30px; cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s;
+        }
+        .btn-reiniciar:hover { background-color: #c4141a; transform: scale(1.05); }
+
+        .zona-instrucciones {
+            background: #fff; border: 2px dashed #ed1c24; padding: 15px;
+            border-radius: 15px; max-width: 900px; margin: 0 auto 30px;
+        }
+
+        /* Área de items */
+        .items-grid {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+            background: #ffffff; padding: 25px; border-radius: 15px;
+            min-height: 120px; margin-bottom: 40px; border: 1px solid #ddd;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .item {
+            background: #fdfdfd; border: 1px solid #ccc; padding: 10px 15px;
+            border-radius: 8px; cursor: grab; font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;
+            user-select: none;
+        }
+        .item:hover { background: #fff; transform: translateY(-2px); border-color: #ed1c24; }
+
+        /* Contenedores */
+        .contenedores-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px; max-width: 1200px; margin: 0 auto;
+        }
+
+        .contenedor {
+            min-height: 200px; border-radius: 12px; padding: 15px 5px;
+            color: white; font-size: 0.85em; font-weight: bold;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: flex-start; text-align: center; border: 3px solid transparent;
+        }
+
+        .contenedor-label { margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .azul { background: var(--azul); }
+        .amarillo { background: var(--amarillo); color: #333; }
+        .verde { background: var(--verde); }
+        .gris { background: var(--gris); }
+        .cafe { background: var(--cafe); }
+        .rojo { background: var(--rojo); }
+        .gris-oscuro { background: var(--gris-oscuro); }
+        .beige { background: var(--beige); color: #333; }
+
+        .drop-target { border: 3px solid #fff; opacity: 0.9; transform: scale(1.02); }
+
+        /* Feedback visual */
+        #mensaje-alerta {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            padding: 15px 40px; border-radius: 50px; font-weight: bold;
+            display: none; z-index: 1000; color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="mensaje-alerta"></div>
+
+    <h1>TALLER: ¿A QUÉ COLOR VA?</h1>
+
+    <div class="zona-instrucciones">
+        <strong>Instrucciones:</strong> Arrastra el residuo al color que corresponde. 
+        Si el contenedor es incorrecto, el objeto volverá a su lugar.
+    </div>
+
+    <div class="controles">
+        <button class="btn-reiniciar" onclick="reiniciarJuego()">🔄 REINICIAR ACTIVIDAD</button>
+    </div>
+
+    <div id="items-box" class="items-grid">
+        </div>
+
+    <div class="contenedores-grid">
+        <div class="contenedor azul" data-color="azul"><div class="contenedor-label">Papel y Cartón</div></div>
+        <div class="contenedor amarillo" data-color="amarillo"><div class="contenedor-label">Plásticos PET</div></div>
+        <div class="contenedor verde" data-color="verde"><div class="contenedor-label">Vidrios</div></div>
+        <div class="contenedor beige" data-color="beige"><div class="contenedor-label">Cartones Bebidas</div></div>
+        <div class="contenedor gris" data-color="gris"><div class="contenedor-label">Latas y Metales</div></div>
+        <div class="contenedor cafe" data-color="cafe"><div class="contenedor-label">Orgánicos</div></div>
+        <div class="contenedor gris-oscuro" data-color="gris-oscuro"><div class="contenedor-label">Otros / Resto</div></div>
+        <div class="contenedor rojo" data-color="rojo"><div class="contenedor-label">Peligrosos</div></div>
+    </div>
+
+    <script>
+        const listaResiduos = [
+            { id: "r1", nombre: "📦 Caja de Cartón", color: "azul" },
+            { id: "r2", nombre: "📰 Diario", color: "azul" },
+            { id: "r3", nombre: "🥤 Botella Plástico", color: "amarillo" },
+            { id: "r4", nombre: "🧴 Envase Detergente", color: "amarillo" },
+            { id: "r5", nombre: "🍾 Botella Vidrio", color: "verde" },
+            { id: "r6", nombre: "🫙 Frasco Conserva", color: "verde" },
+            { id: "r7", nombre: "🧃 Caja de Jugo (Tetra)", color: "beige" },
+            { id: "r8", nombre: "🥛 Caja de Leche", color: "beige" },
+            { id: "r9", nombre: "🥤 Lata de Bebida", color: "gris" },
+            { id: "r10", nombre: "🥫 Lata de Atún", color: "gris" },
+            { id: "r11", nombre: "🍌 Cáscara Fruta", color: "cafe" },
+            { id: "r12", nombre: "🥚 Cáscara Huevo", color: "cafe" },
+            { id: "r13", nombre: "🔋 Pilas", color: "rojo" },
+            { id: "r14", nombre: "💊 Medicamentos", color: "rojo" },
+            { id: "r15", nombre: "🍕 Caja Pizza Sucia", color: "gris-oscuro" },
+            { id: "r16", nombre: "🧾 Boleta Cajero", color: "gris-oscuro" },
+            { id: "r17", nombre: "🧻 Servilleta Usada", color: "gris-oscuro" },
+            { id: "r18", nombre: "🏺 Cerámica Rota", color: "gris-oscuro" }
+        ];
+
+        const itemsBox = document.getElementById('items-box');
+        const alerta = document.getElementById('mensaje-alerta');
+
+        function inicializarItems() {
+            itemsBox.innerHTML = '';
+            // Mezclar aleatoriamente para que no siempre salgan igual
+            const listaMezclada = [...listaResiduos].sort(() => Math.random() - 0.5);
+            
+            listaMezclada.forEach(res => {
+                const div = document.createElement('div');
+                div.className = 'item';
+                div.draggable = true;
+                div.id = res.id;
+                div.innerText = res.nombre;
+                div.dataset.target = res.color;
+                div.addEventListener('dragstart', (e) => e.dataTransfer.setData('text', e.target.id));
+                itemsBox.appendChild(div);
+            });
+        }
+
+        const contenedores = document.querySelectorAll('.contenedor');
+        contenedores.forEach(cont => {
+            cont.addEventListener('dragover', e => e.preventDefault());
+            cont.addEventListener('dragenter', function() { this.classList.add('drop-target'); });
+            cont.addEventListener('dragleave', function() { this.classList.remove('drop-target'); });
+            
+            cont.addEventListener('drop', function(e) {
+                this.classList.remove('drop-target');
+                const id = e.dataTransfer.getData('text');
+                const item = document.getElementById(id);
+                const colorDestino = this.dataset.color;
+                const colorCorrecto = item.dataset.target;
+
+                if (colorDestino === colorCorrecto) {
+                    this.appendChild(item);
+                    item.draggable = false;
+                    item.style.cursor = 'default';
+                    item.style.opacity = '0.9';
+                    mostrarAlerta("¡CORRECTO! ✅", "#2ecc71");
+                } else {
+                    mostrarAlerta("¡INCORRECTO! ❌ Ese residuo no va ahí.", "#ed1c24");
+                }
+            });
+        });
+
+        function mostrarAlerta(msg, color) {
+            alerta.innerText = msg;
+            alerta.style.backgroundColor = color;
+            alerta.style.display = "block";
+            setTimeout(() => { alerta.style.display = "none"; }, 1500);
+        }
+
+        function reiniciarJuego() {
+            if(confirm("¿Quieres reiniciar el taller y mezclar los elementos?")) {
+                inicializarItems();
+                document.querySelectorAll('.contenedor').forEach(c => {
+                    // Limpiar contenedores manteniendo el label
+                    const label = c.querySelector('.contenedor-label');
+                    c.innerHTML = '';
+                    c.appendChild(label);
+                });
+            }
+        }
+
+        inicializarItems();
+    </script>
+</body>
+</html>
